@@ -15,12 +15,12 @@ on:
         type: boolean
 
 permissions:
-  contents: write   # required for the optional release job
+  contents: write
   actions: read
 
 jobs:
   # --------------------------------------------------------------
-  # 1. Smoke test — Linux-side sanity check (always runs)
+  # 1. Smoke test — always runs first, fails fast
   # --------------------------------------------------------------
   lint:
     name: Lint & Validation
@@ -31,11 +31,11 @@ jobs:
         run: |
           for f in helio-g88/presets/helio_g88_defaults.json; do
             echo "Validating $f"
-            python3 -c "import json; json.load(open('$f'))" || exit 1
+            python3 -c "import json; json.load(open('$f'))"
           done
       - name: Validate YAML files
         run: |
-          python3 -c "import yaml; yaml.safe_load(open('helio-g88/ci/validate_config.yaml'))" || exit 1
+          python3 -c "import yaml; yaml.safe_load(open('helio-g88/ci/validate_config.yaml'))"
       - name: Check manifest is valid XML
         run: python3 -c "import xml.etree.ElementTree as ET; ET.parse('app/src/main/AndroidManifest.xml')"
 
@@ -75,8 +75,7 @@ jobs:
           mkdir -p app/src/main/assets
           cd app/src/main/assets
 
-          BASE="https://github.com/brunodev85/winlator/releases/latest/download"
-          # The upstream release ships these in a single zip; pull what we need.
+          BASE="https://github.com/brunodev85/winulator/releases/latest/download"
           echo "Fetching upstream asset index…"
           curl -sL "$BASE/SHA256SUMS" -o SHA256SUMS 2>/dev/null || true
           curl -sL -o rootfs.tzst              "$BASE/rootfs.tzst"
@@ -92,44 +91,84 @@ jobs:
             echo "  $f: $(du -h $f | cut -f1)"
           done
 
+      - name: Prepare signing keystore
+        if: env.HAS_KEYSTORE == 'true'
+        env:
+          HAS_KEYSTORE: ${{ secrets.RELEASE_KEYSTORE_BASE64 != '' }}
+        run: |
+          mkdir -p $HOME/.gradle
+          echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 -d > $HOME/.gradle/release.keystore
+          ls -la $HOME/.gradle/release.keystore
+
       - name: Grant Execute Permissions
         run: |
           chmod +x ./gradlew
           chmod +x helio-g88/build.sh
 
+      # ---------- Debug build (always) ----------
       - name: Build Debug APK
         run: ./gradlew assembleDebug --no-daemon
 
-      - name: Locate built APK
-        id: locate
+      - name: Locate built debug APK
+        id: locate_debug
         run: |
           APK=$(find app/app/build/outputs/apk/debug -name '*.apk' | head -1)
           echo "apk_path=$APK" >> $GITHUB_OUTPUT
-          echo "::notice::APK built at $APK ($(du -h $APK | cut -f1))"
+          echo "::notice::Debug APK built at $APK ($(du -h $APK | cut -f1))"
 
-      - name: Upload APK Artifact
+      - name: Upload Debug APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Winlator-Helio-G88-Debug
-          path: ${{ steps.locate.outputs.apk_path }}
+          name: Winulator-Helio-G88-Debug
+          path: ${{ steps.locate_debug.outputs.apk_path }}
           if-no-files-found: error
           retention-days: 14
 
-      - name: Build Release APK (unsigned)
-        run: ./gradlew assembleRelease --no-daemon
-        continue-on-error: true   # signing is user-provided
+      # ---------- Release build (signed if keystore provided) ----------
+      - name: Build Signed Release APK
+        if: env.HAS_KEYSTORE == 'true'
+        env:
+          HAS_KEYSTORE: ${{ secrets.RELEASE_KEYSTORE_BASE64 != '' }}
+        run: |
+          ./gradlew assembleRelease --no-daemon \
+            -PRELEASE_STORE_FILE=$HOME/.gradle/release.keystore \
+            -PRELEASE_STORE_PASSWORD=${{ secrets.RELEASE_STORE_PASSWORD }} \
+            -PRELEASE_KEY_ALIAS=${{ secrets.RELEASE_KEY_ALIAS }} \
+            -PRELEASE_KEY_PASSWORD=${{ secrets.RELEASE_KEY_PASSWORD }}
+        continue-on-error: false
+
+      - name: Build Unsigned Release APK (fallback)
+        if: env.HAS_KEYSTORE != 'true'
+        env:
+          HAS_KEYSTORE: ${{ secrets.RELEASE_KEYSTORE_BASE64 != '' }}
+        run: |
+          ./gradlew assembleRelease --no-daemon
+        continue-on-error: true
+
+      - name: Locate built release APK
+        id: locate_release
+        if: success() || failure()
+        run: |
+          APK=$(find app/app/build/outputs/apk/release -name '*.apk' 2>/dev/null | head -1)
+          if [ -z "$APK" ]; then
+            echo "apk_path=" >> $GITHUB_OUTPUT
+            echo "::warning::No release APK was produced"
+          else
+            echo "apk_path=$APK" >> $GITHUB_OUTPUT
+            echo "::notice::Release APK built at $APK ($(du -h $APK | cut -f1))"
+          fi
 
       - name: Upload Release APK Artifact
-        if: success()
+        if: steps.locate_release.outputs.apk_path != ''
         uses: actions/upload-artifact@v4
         with:
-          name: Winlator-Helio-G88-Release-unsigned
-          path: app/app/build/outputs/apk/release/*.apk
+          name: Winulator-Helio-G88-Release
+          path: ${{ steps.locate_release.outputs.apk_path }}
           if-no-files-found: warn
-          retention-days: 14
+          retention-days: 30
 
   # --------------------------------------------------------------
-  # 3. Optional GitHub Release with the APK attached
+  # 3. GitHub Release (only on version tags)
   # --------------------------------------------------------------
   release:
     name: Publish GitHub Release
@@ -139,22 +178,33 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - name: Download debug APK
+        uses: actions/download-artifact@v4
         with:
-          name: Winlator-Helio-G88-Debug
-          path: artifacts
+          name: Winulator-Helio-G88-Debug
+          path: artifacts/debug
+        continue-on-error: true
+
+      - name: Download release APK
+        uses: actions/download-artifact@v4
+        with:
+          name: Winulator-Helio-G88-Release
+          path: artifacts/release
+        continue-on-error: true
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: artifacts/*.apk
+          files: |
+            artifacts/debug/*.apk
+            artifacts/release/*.apk
           generate_release_notes: true
           body: |
-            ## Winlator Helio G88 Edition
+            ## Winulator Helio G88 Edition
 
             Pre-built APK optimised for MediaTek Helio G80 – G100 (Mali-G52 MC2/3) devices.
 
-            **Install:** download `Winlator-Helio-G88-Debug.apk`, enable *Install unknown apps* for your file manager, then open the APK on your device.
+            **Install:** download `Winulator-Helio-G88-Debug.apk`, enable *Install unknown apps* for your file manager, then open the APK on your device.
 
             **Default settings out of the box:**
             - Graphics driver: **VirGL** (best Mali-G52 backend)
