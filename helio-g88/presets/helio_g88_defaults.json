@@ -1,0 +1,35 @@
+{
+  "profile_name": "Helio G88 / Mali-G52 Ultra",
+  "target_chips": ["Helio G80", "Helio G85", "Helio G88", "Helio G90T", "Helio G95", "Helio G96", "Helio G99", "Helio G100"],
+  "gpu_architecture": "ARM Mali-G52 MP2 / Mali-G57 MC2",
+  "defaults": {
+    "graphics_driver": "virgl,virgl",
+    "screen_resolution": "960x544",
+    "fallback_resolution": "800x450",
+    "box64_preset": "HELIO_G88",
+    "wine_version": "Wine 9.2 (or system default)",
+    "audio_driver": "alsa",
+    "env_vars": {
+      "MESA_EXTENSION_MAX_YEAR": "2003",
+      "MESA_NO_ERROR": "1",
+      "GALLIUM_HUD": "fps",
+      "ZINK_DESCRIPTORS": "lazy",
+      "ZINK_DEBUG": "compact",
+      "MESA_SHADER_CACHE_DISABLE": "false",
+      "MESA_SHADER_CACHE_MAX_SIZE": "512MB",
+      "mesa_glthread": "true",
+      "WINEESYNC": "1",
+      "BOX64_DYNAREC_SAFEFLAGS": "2",
+      "BOX64_DYNAREC_FASTNAN": "1",
+      "BOX64_DYNAREC_FASTROUND": "1",
+      "BOX64_DYNAREC_X87DOUBLE": "0",
+      "BOX64_DYNAREC_BIGBLOCK": "3",
+      "BOX64_DYNAREC_STRONGMEM": "1",
+      "BOX64_DYNAREC_FORWARD": "256",
+      "BOX64_DYNAREC_CALLRET": "1",
+      "BOX64_DYNAREC_WAIT": "1",
+      "BOX64_DYNAREC_NATIVEFLAGS": "0",
+      "BOX64_DYNAREC_WEAKBARRIER": "2"
+    }
+  }
+}
