@@ -134,7 +134,8 @@ jobs:
           # Remove libraries that the local CMake build will compile from source,
           # to avoid mergeDebugNativeLibs seeing them twice.
           echo "Removing libs that conflict with local CMake build…"
-          for f in libfile_redirect_hook.so libmain_hook.so libgsl_alloc_hook.so libhook_impl.so; do
+          CONFLICT_LIBS="libfile_redirect_hook.so libmain_hook.so libgsl_alloc_hook.so libhook_impl.so libgladiorenderer.so libmidihandler.so libvirglrenderer.so libvortekrenderer.so libwinlator.so libadrenotools.so"
+          for f in $CONFLICT_LIBS; do
             if [ -f "$WORKSPACE/app/src/main/jniLibs/arm64-v8a/$f" ]; then
               rm "$WORKSPACE/app/src/main/jniLibs/arm64-v8a/$f"
               echo "  removed $f"
