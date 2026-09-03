@@ -131,7 +131,16 @@ jobs:
           cd /tmp
           unzip -o winlator.apk "lib/arm64-v8a/*.so" -d extracted 2>/dev/null
           cp extracted/lib/arm64-v8a/*.so "$WORKSPACE/app/src/main/jniLibs/arm64-v8a/"
-          echo "Extracted libs:"
+          # Remove libraries that the local CMake build will compile from source,
+          # to avoid mergeDebugNativeLibs seeing them twice.
+          echo "Removing libs that conflict with local CMake build…"
+          for f in libfile_redirect_hook.so libmain_hook.so libgsl_alloc_hook.so libhook_impl.so; do
+            if [ -f "$WORKSPACE/app/src/main/jniLibs/arm64-v8a/$f" ]; then
+              rm "$WORKSPACE/app/src/main/jniLibs/arm64-v8a/$f"
+              echo "  removed $f"
+            fi
+          done
+          echo "Final libs:"
           ls -la "$WORKSPACE/app/src/main/jniLibs/arm64-v8a/"
 
       - name: Grant Execute Permissions
