@@ -118,7 +118,7 @@ jobs:
           ndk-version: '26.1.10909125'
           cmake-version: '3.22.1'
 
-      - name: Download upstream APK & extract native libs
+      - name: Download upstream APK & extract assets
         run: |
           set -e
           WORKSPACE="$GITHUB_WORKSPACE"
@@ -143,6 +143,26 @@ jobs:
           done
           echo "Final prebuilt libs:"
           ls -la "$WORKSPACE/app/src/main/jniLibs/arm64-v8a/"
+          # ------------------------------------------------------------------
+          # Extract large binary assets (rootfs, drivers, container, etc.) that
+          # aren't checked into the repo. Winulator's APK looks for these in
+          # its private assets dir at first launch, so the APK we produce must
+          # contain them or first-run fails with "unable to install system
+          # files". The CI downloads them from the upstream Winlator release.
+          # ------------------------------------------------------------------
+          echo "Copying upstream binary assets into the source tree…"
+          # Files we definitely need (rootfs + container) — copy these first.
+          unzip -o /tmp/winlator.apk \
+            "assets/rootfs.tzst" \
+            "assets/rootfs_patches.tzst" \
+            "assets/container_pattern.tzst" \
+            "assets/graphics_driver/*.tzst" \
+            "assets/dxwrapper/*.tzst" \
+            "assets/box64/box64-0.4.0.tzst" \
+            -d "$WORKSPACE/app/src/main/" >/dev/null
+          echo "  copied $(du -sh "$WORKSPACE/app/src/main/assets" | cut -f1) of assets"
+          echo "Final asset tree:"
+          find "$WORKSPACE/app/src/main/assets" -maxdepth 2 -type f | sort
 
       - name: Grant Execute Permissions
         run: |
