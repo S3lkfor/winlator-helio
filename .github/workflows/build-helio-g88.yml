@@ -29,15 +29,64 @@ jobs:
       - uses: actions/checkout@v4
       - name: Validate JSON presets
         run: |
-          for f in helio-g88/presets/helio_g88_defaults.json; do
-            echo "Validating $f"
-            python3 -c "import json; json.load(open('$f'))"
-          done
+          python3 - <<'PY'
+          import json, sys, os
+          for f in [
+            "helio-g88/presets/helio_g88_defaults.json",
+            "helio-g88/ci/validate_config.yaml",
+          ]:
+            if f.endswith(".json"):
+              with open(f) as fh:
+                json.load(fh)
+              print(f"OK  {f}")
+          PY
+
       - name: Validate YAML files
         run: |
-          python3 -c "import yaml; yaml.safe_load(open('helio-g88/ci/validate_config.yaml'))"
+          python3 - <<'PY'
+          import sys
+          try:
+            import yaml
+          except ImportError:
+            print("::warning::PyYAML not installed; installing")
+            import subprocess
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "--quiet", "pyyaml"])
+            import yaml
+          for f in [
+            "helio-g88/ci/validate_config.yaml",
+            ".github/workflows/build-helio-g88.yml",
+          ]:
+            with open(f) as fh:
+              yaml.safe_load(fh)
+            print(f"OK  {f}")
+          PY
+
       - name: Check manifest is valid XML
         run: python3 -c "import xml.etree.ElementTree as ET; ET.parse('app/src/main/AndroidManifest.xml')"
+
+      - name: Verify preset schema
+        run: |
+          python3 - <<'PY'
+          import json, yaml, sys
+          with open("helio-g88/presets/helio_g88_defaults.json") as f:
+            cfg = json.load(f)
+          defaults = cfg.get("defaults", {})
+          # Check top-level metadata
+          for key in ["profile_name", "target_chips", "gpu_architecture"]:
+            if key not in cfg:
+              print(f"::error::missing top-level key: {key}")
+              sys.exit(1)
+          # Check nested defaults
+          required_defaults = ["graphics_driver", "screen_resolution", "box64_preset", "env_vars"]
+          missing = [k for k in required_defaults if k not in defaults]
+          if missing:
+            print(f"::error::defaults is missing required keys: {missing}")
+            sys.exit(1)
+          print(f"OK  schema check passed (profile={cfg.get('profile_name')}, {len(defaults.get('env_vars',{}))} env vars)")
+          PY
+
+      - name: Bash syntax check
+        run: bash -n helio-g88/build.sh
 
   # --------------------------------------------------------------
   # 2. Build the actual Android APK

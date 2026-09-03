@@ -1,0 +1,39 @@
+# Helio G88 — CI Validation Config
+#
+# This file lists every config file the CI linter checks before
+# triggering the (expensive) Android APK build. The CI reads this file
+# to know which files to validate; the schema below is verified by
+# an in-workflow Python script that knows the actual structure of
+# helio_g88_defaults.json.
+
+version: 1
+
+# JSON files — must parse with json.load()
+json_files:
+  - helio-g88/presets/helio_g88_defaults.json
+
+# YAML files — must parse with yaml.safe_load()
+yaml_files:
+  - helio-g88/ci/validate_config.yaml
+  - .github/workflows/build-helio-g88.yml
+
+# XML files — must parse with ElementTree
+xml_files:
+  - app/src/main/AndroidManifest.xml
+
+# Bash scripts — must pass `bash -n` syntax check
+bash_files:
+  - helio-g88/build.sh
+
+# Schema for the master preset (helio-g88/presets/helio_g88_defaults.json)
+# Verified by the workflow's "Verify preset schema" step.
+preset_schema:
+  top_level_required:
+    - profile_name        # human-readable name
+    - target_chips        # list of SoC names this profile targets
+    - gpu_architecture    # description of the GPU
+  defaults_required:
+    - graphics_driver     # e.g. "virgl,virgl"
+    - screen_resolution   # e.g. "960x544"
+    - box64_preset        # e.g. "HELIO_G88"
+    - env_vars            # dict of env var name -> value
