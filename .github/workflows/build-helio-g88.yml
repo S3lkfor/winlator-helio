@@ -121,17 +121,18 @@ jobs:
       - name: Download upstream APK & extract native libs
         run: |
           set -e
+          WORKSPACE="$GITHUB_WORKSPACE"
           echo "Fetching upstream Winlator APK…"
           curl -sL -o /tmp/winlator.apk "https://github.com/brunodev85/winlator/releases/latest/download/Winlator_11.1.apk"
           echo "Cleaning any pre-existing jniLibs from repo…"
-          rm -rf app/src/main/jniLibs
+          rm -rf "$WORKSPACE/app/src/main/jniLibs"
           echo "Extracting native libraries…"
-          mkdir -p app/src/main/jniLibs/arm64-v8a
+          mkdir -p "$WORKSPACE/app/src/main/jniLibs/arm64-v8a"
           cd /tmp
           unzip -o winlator.apk "lib/arm64-v8a/*.so" -d extracted 2>/dev/null
-          cp extracted/lib/arm64-v8a/*.so app/src/main/jniLibs/arm64-v8a/
+          cp extracted/lib/arm64-v8a/*.so "$WORKSPACE/app/src/main/jniLibs/arm64-v8a/"
           echo "Extracted libs:"
-          ls -la app/src/main/jniLibs/arm64-v8a/
+          ls -la "$WORKSPACE/app/src/main/jniLibs/arm64-v8a/"
 
       - name: Grant Execute Permissions
         run: |
