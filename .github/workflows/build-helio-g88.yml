@@ -118,37 +118,6 @@ jobs:
           ndk-version: '26.1.10909125'
           cmake-version: '3.22.1'
 
-      - name: Download upstream Winlator binary assets
-        run: |
-          set -e
-          mkdir -p app/src/main/assets
-          cd app/src/main/assets
-
-          BASE="https://github.com/brunodev85/winulator/releases/latest/download"
-          echo "Fetching upstream asset index…"
-          curl -sL "$BASE/SHA256SUMS" -o SHA256SUMS 2>/dev/null || true
-          curl -sL -o rootfs.tzst              "$BASE/rootfs.tzst"
-          curl -sL -o rootfs_patches.tzst     "$BASE/rootfs_patches.tzst"
-          curl -sL -o container_pattern.tzst  "$BASE/container_pattern.tzst"
-          curl -sL -o pulseaudio.tzst         "$BASE/pulseaudio.tzst"
-
-          for f in rootfs.tzst rootfs_patches.tzst container_pattern.tzst pulseaudio.tzst; do
-            if [ ! -s "$f" ]; then
-              echo "::error::Failed to download $f"
-              exit 1
-            fi
-            echo "  $f: $(du -h $f | cut -f1)"
-          done
-
-      - name: Prepare signing keystore
-        if: env.HAS_KEYSTORE == 'true'
-        env:
-          HAS_KEYSTORE: ${{ secrets.RELEASE_KEYSTORE_BASE64 != '' }}
-        run: |
-          mkdir -p $HOME/.gradle
-          echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 -d > $HOME/.gradle/release.keystore
-          ls -la $HOME/.gradle/release.keystore
-
       - name: Grant Execute Permissions
         run: |
           chmod +x ./gradlew
@@ -174,6 +143,15 @@ jobs:
           retention-days: 14
 
       # ---------- Release build (signed if keystore provided) ----------
+      - name: Prepare signing keystore
+        if: env.HAS_KEYSTORE == 'true'
+        env:
+          HAS_KEYSTORE: ${{ secrets.RELEASE_KEYSTORE_BASE64 != '' }}
+        run: |
+          mkdir -p $HOME/.gradle
+          echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 -d > $HOME/.gradle/release.keystore
+          ls -la $HOME/.gradle/release.keystore
+
       - name: Build Signed Release APK
         if: env.HAS_KEYSTORE == 'true'
         env:
