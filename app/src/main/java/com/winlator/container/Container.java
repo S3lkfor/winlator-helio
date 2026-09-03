@@ -17,10 +17,11 @@ import java.io.File;
 import java.util.Iterator;
 
 public class Container {
-    public static final String DEFAULT_ENV_VARS = "ZINK_DESCRIPTORS=lazy ZINK_DEBUG=compact MESA_SHADER_CACHE_DISABLE=false MESA_SHADER_CACHE_MAX_SIZE=512MB mesa_glthread=true WINEESYNC=1 TU_DEBUG=noconform MESA_EXTENSION_MAX_YEAR=2003 MESA_NO_ERROR=1 GALLIUM_HUD=fps";
+    // Helio G88/G100 (Mali-G52 MP2): VirGL via software Gallium, no Turnip/Zink
+    public static final String DEFAULT_ENV_VARS = "LIBGL_MALLOC=libc_malloc_hooks MESA_SHADER_CACHE_DISABLE=false MESA_SHADER_CACHE_MAX_SIZE=512MB MESA_GLTHREAD=true GALLIUM_DRIVER=virpipe WINEESYNC=1 WINEDEBUG=-all";
     public static final String DEFAULT_SCREEN_SIZE = "960x544";
     public static final String DEFAULT_AUDIO_DRIVER = AudioDrivers.ALSA;
-    public static final String DEFAULT_DXWRAPPER = DXWrappers.DXVK;
+    public static final String DEFAULT_DXWRAPPER = DXWrappers.WINED3D;
     public static final String DEFAULT_WINCOMPONENTS = "direct3d=1,directsound=1,directmusic=1,directshow=0,directplay=0,xaudio=1,vcrun2005=0,vcrun2010=1,wmdecoder=1";
     public static final String FALLBACK_WINCOMPONENTS = "direct3d=0,directsound=0,directmusic=0,directshow=0,directplay=0,xaudio=0,vcrun2005=0,vcrun2010=0,wmdecoder=0";
     public static final String DEFAULT_DRIVES = "D:"+AppUtils.DIRECTORY_DOWNLOADS +"E:"+AppUtils.INTERNAL_STORAGE;
