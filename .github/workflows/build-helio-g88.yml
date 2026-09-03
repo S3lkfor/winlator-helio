@@ -124,24 +124,24 @@ jobs:
           WORKSPACE="$GITHUB_WORKSPACE"
           echo "Fetching upstream Winlator APK…"
           curl -sL -o /tmp/winlator.apk "https://github.com/brunodev85/winlator/releases/latest/download/Winlator_11.1.apk"
-          echo "Cleaning any pre-existing jniLibs from repo…"
-          rm -rf "$WORKSPACE/app/src/main/jniLibs"
           echo "Extracting native libraries…"
+          rm -rf "$WORKSPACE/app/src/main/jniLibs"
           mkdir -p "$WORKSPACE/app/src/main/jniLibs/arm64-v8a"
           cd /tmp
           unzip -o winlator.apk "lib/arm64-v8a/*.so" -d extracted 2>/dev/null
           cp extracted/lib/arm64-v8a/*.so "$WORKSPACE/app/src/main/jniLibs/arm64-v8a/"
-          # Remove libraries that the local CMake build will compile from source,
-          # to avoid mergeDebugNativeLibs seeing them twice.
+          # Remove libraries that the local CMake build will compile from source.
+          # (CMake will produce its own versions of these; jniLibs copies would
+          # cause mergeDebugNativeLibs to see them twice.)
           echo "Removing libs that conflict with local CMake build…"
-          CONFLICT_LIBS="libfile_redirect_hook.so libmain_hook.so libgsl_alloc_hook.so libhook_impl.so libgladiorenderer.so libmidihandler.so libvirglrenderer.so libvortekrenderer.so libwinlator.so libadrenotools.so"
+          CONFLICT_LIBS="libfile_redirect_hook.so libmain_hook.so libgsl_alloc_hook.so libhook_impl.so libgladiorenderer.so libmidihandler.so libvirglrenderer.so libvortekrenderer.so libwinlator.so libadrenotools.so libomp.so"
           for f in $CONFLICT_LIBS; do
             if [ -f "$WORKSPACE/app/src/main/jniLibs/arm64-v8a/$f" ]; then
               rm "$WORKSPACE/app/src/main/jniLibs/arm64-v8a/$f"
               echo "  removed $f"
             fi
           done
-          echo "Final libs:"
+          echo "Final prebuilt libs:"
           ls -la "$WORKSPACE/app/src/main/jniLibs/arm64-v8a/"
 
       - name: Grant Execute Permissions
