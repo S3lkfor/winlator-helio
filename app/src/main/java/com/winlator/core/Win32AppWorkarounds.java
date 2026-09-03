@@ -194,14 +194,16 @@ public class Win32AppWorkarounds implements OnPreExecListener {
 
             // GTA: San Andreas — cap at 960x544, disable fog for Mali fillrate
             case "gta_sa.exe":
-                return (MultiWorkaround) new ScreenSizeWorkaround() {
-                    public String getValue() { return "960x544"; }
-                },
-                new EnvVarsWorkaround() {
-                    public void apply(EnvVars envVars) {
-                        envVars.put("__GL_THREADED_OPTIMIZATION", "1");
+                return new MultiWorkaround(
+                    new ScreenSizeWorkaround() {
+                        public String getValue() { return "960x544"; }
+                    },
+                    new EnvVarsWorkaround() {
+                        public void apply(EnvVars envVars) {
+                            envVars.put("__GL_THREADED_OPTIMIZATION", "1");
+                        }
                     }
-                };
+                );
 
             // Assassin's Creed series — DX9 mode only, lower res for Mali
             case "assassinscreed.exe":
@@ -209,15 +211,17 @@ public class Win32AppWorkarounds implements OnPreExecListener {
             case "assassinscreed_brotherhood.exe":
             case "assassinscreed_revelations.exe":
             case "AC2Patch_pc.exe":
-                return (MultiWorkaround) new ScreenSizeWorkaround() {
-                    public String getValue() { return "960x540"; }
-                },
-                new EnvVarsWorkaround() {
-                    public void apply(EnvVars envVars) {
-                        // Force DX9 renderer via registry key before launch
-                        envVars.put("__GL_THREADED_OPTIMIZATION", "1");
+                return new MultiWorkaround(
+                    new ScreenSizeWorkaround() {
+                        public String getValue() { return "960x540"; }
+                    },
+                    new EnvVarsWorkaround() {
+                        public void apply(EnvVars envVars) {
+                            // Force DX9 renderer via registry key before launch
+                            envVars.put("__GL_THREADED_OPTIMIZATION", "1");
+                        }
                     }
-                };
+                );
 
             // Need for Speed: Most Wanted (2005) — default 960x544 is fine, ensure WineD3D
             case "speed.exe":
@@ -239,15 +243,17 @@ public class Win32AppWorkarounds implements OnPreExecListener {
 
             // Warcraft III: Reforged — force DX9 mode, not Reforged (heavier)
             case "war3.exe":
-                return (MultiWorkaround) new ScreenSizeWorkaround() {
-                    public String getValue() { return "960x544"; }
-                },
-                new EnvVarsWorkaround() {
-                    public void apply(EnvVars envVars) {
-                        // DX9 mode via launch flag handled by Wine; ensure OpenGL path
-                        envVars.put("MESA_SHADER_CACHE_DISABLE", "true");
+                return new MultiWorkaround(
+                    new ScreenSizeWorkaround() {
+                        public String getValue() { return "960x544"; }
+                    },
+                    new EnvVarsWorkaround() {
+                        public void apply(EnvVars envVars) {
+                            // DX9 mode via launch flag handled by Wine; ensure OpenGL path
+                            envVars.put("MESA_SHADER_CACHE_DISABLE", "true");
+                        }
                     }
-                };
+                );
 
             // Minecraft (Java) — OptiFine recommended; cap render distance
             case "javaw.exe":
@@ -259,23 +265,27 @@ public class Win32AppWorkarounds implements OnPreExecListener {
 
             // StarCraft II — very demanding; cap at 800x600 minimum viable
             case "sc2.exe":
-                return (MultiWorkaround) new ScreenSizeWorkaround() {
-                    public String getValue() { return "800x600"; }
-                },
-                new EnvVarsWorkaround() {
-                    public void apply(EnvVars envVars) {
-                        envVars.put("MESA_SHADER_CACHE_DISABLE", "true");
+                return new MultiWorkaround(
+                    new ScreenSizeWorkaround() {
+                        public String getValue() { return "800x600"; }
+                    },
+                    new EnvVarsWorkaround() {
+                        public void apply(EnvVars envVars) {
+                            envVars.put("MESA_SHADER_CACHE_DISABLE", "true");
+                        }
                     }
-                };
+                );
 
             // Tomb Raider 2013 — DX9 mode recommended, low res for Mali
             case "tomb Raider 2013.exe":
-                return (MultiWorkaround) new ScreenSizeWorkaround() {
-                    public String getValue() { return "640x360"; }
-                },
-                new DXWrapperWorkaround() {
-                    public String getValue() { return DXWrappers.WINED3D; }
-                };
+                return new MultiWorkaround(
+                    new ScreenSizeWorkaround() {
+                        public String getValue() { return "640x360"; }
+                    },
+                    new DXWrapperWorkaround() {
+                        public String getValue() { return DXWrappers.WINED3D; }
+                    }
+                );
 
             default:
                 return null;
