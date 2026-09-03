@@ -176,6 +176,107 @@ public class Win32AppWorkarounds implements OnPreExecListener {
                 return (WindowWorkaround) (window) -> AppUtils.runDelayed(() -> winHandler.bringToFront(window.getClassName(), window.getHandle()), 1000);
             case "launcher.exe":
                 return (FileManipulationWorkaround) this::runNoLauncher;
+
+            // ============================================================
+            // Helio G88 / Mali-G52 Per-Game Workarounds
+            // Priority: force DX9 (WineD3D+OpenGL) for games that default to
+            // DX10/11 on Mali, and cap resolution for GPU-limited titles.
+            // ============================================================
+
+            // Counter-Strike 1.6 — use OpenGL renderer, disable shader cache
+            case "hl.exe":
+            case "cstrike.exe":
+            case "czero.exe":
+                return (EnvVarsWorkaround) (envVars) -> {
+                    envVars.put("RAD_VIDEO", "gl");
+                    envVars.put("MESA_SHADER_CACHE_DISABLE", "true");
+                };
+
+            // GTA: San Andreas — cap at 960x544, disable fog for Mali fillrate
+            case "gta_sa.exe":
+                return (MultiWorkaround) new ScreenSizeWorkaround() {
+                    public String getValue() { return "960x544"; }
+                },
+                new EnvVarsWorkaround() {
+                    public void apply(EnvVars envVars) {
+                        envVars.put("__GL_THREADED_OPTIMIZATION", "1");
+                    }
+                };
+
+            // Assassin's Creed series — DX9 mode only, lower res for Mali
+            case "assassinscreed.exe":
+            case "assassinscreed2.exe":
+            case "assassinscreed_brotherhood.exe":
+            case "assassinscreed_revelations.exe":
+            case "AC2Patch_pc.exe":
+                return (MultiWorkaround) new ScreenSizeWorkaround() {
+                    public String getValue() { return "960x540"; }
+                },
+                new EnvVarsWorkaround() {
+                    public void apply(EnvVars envVars) {
+                        // Force DX9 renderer via registry key before launch
+                        envVars.put("__GL_THREADED_OPTIMIZATION", "1");
+                    }
+                };
+
+            // Need for Speed: Most Wanted (2005) — default 960x544 is fine, ensure WineD3D
+            case "speed.exe":
+            case "nfsms.exe":
+                return (DXWrapperWorkaround) () -> DXWrappers.WINED3D;
+
+            // Need for Speed: Carbon — same as MW
+            case "carbon.exe":
+            case "nfsc.exe":
+                return (DXWrapperWorkaround) () -> DXWrappers.WINED3D;
+
+            // Half-Life 2 — Source engine; use OpenGL, cap shader compile
+            case "hl2.exe":
+            case "episodicepisode01.exe":
+                return (EnvVarsWorkaround) (envVars) -> {
+                    envVars.put("MESA_SHADER_CACHE_DISABLE", "true");
+                    envVars.put("__GL_THREADED_OPTIMIZATION", "1");
+                };
+
+            // Warcraft III: Reforged — force DX9 mode, not Reforged (heavier)
+            case "war3.exe":
+                return (MultiWorkaround) new ScreenSizeWorkaround() {
+                    public String getValue() { return "960x544"; }
+                },
+                new EnvVarsWorkaround() {
+                    public void apply(EnvVars envVars) {
+                        // DX9 mode via launch flag handled by Wine; ensure OpenGL path
+                        envVars.put("MESA_SHADER_CACHE_DISABLE", "true");
+                    }
+                };
+
+            // Minecraft (Java) — OptiFine recommended; cap render distance
+            case "javaw.exe":
+                return (EnvVarsWorkaround) (envVars) -> {
+                    envVars.put("MESA_SHADER_CACHE_DISABLE", "true");
+                    envVars.put("__GL_THREADED_OPTIMIZATION", "1");
+                    // -Dfml.earlyProgressWindow=false handled by user in launcher profile
+                };
+
+            // StarCraft II — very demanding; cap at 800x600 minimum viable
+            case "sc2.exe":
+                return (MultiWorkaround) new ScreenSizeWorkaround() {
+                    public String getValue() { return "800x600"; }
+                },
+                new EnvVarsWorkaround() {
+                    public void apply(EnvVars envVars) {
+                        envVars.put("MESA_SHADER_CACHE_DISABLE", "true");
+                    }
+                };
+
+            // Tomb Raider 2013 — DX9 mode recommended, low res for Mali
+            case "tomb Raider 2013.exe":
+                return (MultiWorkaround) new ScreenSizeWorkaround() {
+                    public String getValue() { return "640x360"; }
+                },
+                new DXWrapperWorkaround() {
+                    public String getValue() { return DXWrappers.WINED3D; }
+                };
+
             default:
                 return null;
         }
