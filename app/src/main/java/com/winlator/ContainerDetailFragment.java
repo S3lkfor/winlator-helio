@@ -284,6 +284,10 @@ public class ContainerDetailFragment extends Fragment {
 
             registryEditor.setStringValue("Software\\Wine\\Direct3D", "shader_backend", "glsl");
             registryEditor.setStringValue("Software\\Wine\\Direct3D", "UseGLSL", "enabled");
+            // Helio G88: set Vulkan as the WineD3D renderer.
+            // Vortek provides a real Vulkan ICD on Mali (BCn decode + gl_ClipDistance patch).
+            // This makes WineD3D translate DX9→Vulkan→Vortek→Mali instead of DX9→OpenGL→VirGL.
+            registryEditor.setStringValue("Software\\Wine\\Direct3D", "renderer", "vulkan");
         }
 
         Spinner sWinVersion = view.findViewById(R.id.SWinVersion);

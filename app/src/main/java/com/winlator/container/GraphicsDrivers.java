@@ -80,15 +80,18 @@ public abstract class GraphicsDrivers {
 
     /**
      * Returns the recommended default graphics driver pair based on detected GPU.
-     * - Mali GPUs (Helio G series, Dimensity, Exynos Mali): use VirGL (software rendering via Mesa)
+     * - Mali GPUs (Helio G series, Dimensity, Exynos Mali): use Vortek as primary (real Vulkan ICD + BCn JIT decode)
+     *   with VirGL as OpenGL fallback. Vortek enables DX10-11 on Mali by providing a Vulkan implementation
+     *   that handles BCn texture decompression, gl_ClipDistance patch, and missing WSI extensions.
      * - Qualcomm Adreno: use Turnip (best Vulkan performance)
      * - Other/unknown: use Vortek as safe Vulkan fallback
      */
     public static String getDefaultDriver(Context context) {
         String renderer = GPUHelper.glGetRenderer(context).toLowerCase();
         if (renderer.contains("mali") || renderer.contains("bifrost") || renderer.contains("utgard")) {
-            // Mali GPU detected — VirGL is the only reliable path on mobile Mali
-            return GraphicsDrivers.VIRGL + "," + GraphicsDrivers.VIRGL;
+            // Mali GPU detected — Vortek is the recommended path (Vulkan via CPU BCn decode).
+            // VirGL remains the OpenGL fallback for DX9 games where Vortek's Vulkan init is heavier.
+            return GraphicsDrivers.VORTEK + "," + GraphicsDrivers.VIRGL;
         }
         int adrenoModel = GPUHelper.getAdrenoModelId(context);
         if (adrenoModel > 0) {

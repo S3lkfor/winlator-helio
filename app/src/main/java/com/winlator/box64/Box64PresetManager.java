@@ -85,6 +85,10 @@ public abstract class Box64PresetManager {
             envVars.put("BOX64_DYNAREC_WAIT", "1");
             envVars.put("BOX64_DYNAREC_NATIVEFLAGS", "0");
             envVars.put("BOX64_DYNAREC_WEAKBARRIER", "2");
+            // Big.LITTLE affinity: pin Box64 dynarec worker threads to A55 cluster (cores 2-7).
+            // Leaves A75 cluster (cores 0-1) free for Wine main thread and Mali GPU driver.
+            // Without this, kernel scheduler migrates workers between clusters, causing cache invalidation.
+            envVars.put("BOX64_DYNAREC_AFFINITY", "2-7");
         }
         else if (id.startsWith(Box64Preset.CUSTOM)) {
             for (String[] preset : customPresetsIterator(context)) {

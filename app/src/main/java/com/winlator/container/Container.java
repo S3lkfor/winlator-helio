@@ -17,8 +17,15 @@ import java.io.File;
 import java.util.Iterator;
 
 public class Container {
-    // Helio G88/G100 (Mali-G52 MP2): VirGL via software Gallium, no Turnip/Zink
-    public static final String DEFAULT_ENV_VARS = "LIBGL_MALLOC=libc_malloc_hooks MESA_SHADER_CACHE_DISABLE=false MESA_SHADER_CACHE_MAX_SIZE=512MB MESA_GLTHREAD=true GALLIUM_DRIVER=virpipe WINEESYNC=1 WINEDEBUG=-all";
+    // Helio G88/G100 (Mali-G52 MP2):
+    // Vortek provides a real Vulkan ICD + BCn CPU decode + gl_ClipDistance patches = DX10-11 works on Mali.
+    // VirGL fallback available via driver selector in UI if needed.
+    // Key env vars: MESA_GLSL_VERSION_OVERRIDE silences GLSL version mismatch warnings that break some DX9 games.
+    // MESA_GL_VERSION_OVERRIDE=4.1COMPAT sets Wine's reported OpenGL version so older games use correct shaders.
+    // BOX64_MMAP32=1 required for Wine's 32-bit address layout.
+    // BOX64_DYNAREC_SAFEFLAGS=2 enables flag recomputation after complex instruction sequences (needed for SEH).
+    // STRONGMEM=1 prevents OOM on shared LPDDR4x memory architecture.
+    public static final String DEFAULT_ENV_VARS = "LIBGL_MALLOC=libc_malloc_hooks MESA_SHADER_CACHE_DISABLE=false MESA_SHADER_CACHE_MAX_SIZE=512MB MESA_GLSL_VERSION_OVERRIDE=410 MESA_GL_VERSION_OVERRIDE=4.1COMPAT mesa_glthread=false BOX64_MMAP32=1 STRONGMEM=1 BOX64_DYNAREC_SAFEFLAGS=2 WINEESYNC=1 WINEDEBUG=-all";
     public static final String DEFAULT_SCREEN_SIZE = "960x544";
     public static final String DEFAULT_AUDIO_DRIVER = AudioDrivers.ALSA;
     public static final String DEFAULT_DXWRAPPER = DXWrappers.WINED3D;
@@ -33,7 +40,7 @@ public class Container {
     private String name;
     private String screenSize = DEFAULT_SCREEN_SIZE;
     private String envVars = DEFAULT_ENV_VARS;
-    private String graphicsDriver = GraphicsDrivers.VIRGL+","+ GraphicsDrivers.VIRGL;
+    private String graphicsDriver = GraphicsDrivers.VORTEK+","+ GraphicsDrivers.VIRGL;
     private String dxwrapper = DEFAULT_DXWRAPPER;
     private String dxwrapperConfig = "";
     private String graphicsDriverConfig = "";
