@@ -156,9 +156,14 @@ jobs:
       - name: Locate built debug APK
         id: locate_debug
         run: |
-          APK=$(find app/app/build/outputs/apk/debug -name '*.apk' | head -1)
+          APK=$(find app/build/outputs/apk/debug -name '*.apk' 2>/dev/null | head -1)
+          if [ -z "$APK" ]; then
+            echo "apk_path=" >> $GITHUB_OUTPUT
+            echo "::warning::No debug APK was produced"
+            exit 0
+          fi
           echo "apk_path=$APK" >> $GITHUB_OUTPUT
-          echo "::notice::Debug APK built at $APK ($(du -h $APK | cut -f1))"
+          echo "::notice::Debug APK built at $APK ($(du -h "$APK" | cut -f1))"
 
       - name: Upload Debug APK Artifact
         uses: actions/upload-artifact@v4
@@ -202,13 +207,13 @@ jobs:
         id: locate_release
         if: success() || failure()
         run: |
-          APK=$(find app/app/build/outputs/apk/release -name '*.apk' 2>/dev/null | head -1)
+          APK=$(find app/build/outputs/apk/release -name '*.apk' 2>/dev/null | head -1)
           if [ -z "$APK" ]; then
             echo "apk_path=" >> $GITHUB_OUTPUT
             echo "::warning::No release APK was produced"
           else
             echo "apk_path=$APK" >> $GITHUB_OUTPUT
-            echo "::notice::Release APK built at $APK ($(du -h $APK | cut -f1))"
+            echo "::notice::Release APK built at $APK ($(du -h "$APK" | cut -f1))"
           fi
 
       - name: Upload Release APK Artifact
