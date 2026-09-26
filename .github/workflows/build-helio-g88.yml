@@ -125,8 +125,12 @@ jobs:
           rm -rf "$WORKSPACE/app/src/main/jniLibs"
           mkdir -p "$WORKSPACE/app/src/main/jniLibs/arm64-v8a"
           cd /tmp
-          unzip -o winlator.apk "lib/arm64-v8a/*.so" -d extracted 2>/dev/null
-          cp extracted/lib/arm64-v8a/*.so "$WORKSPACE/app/src/main/jniLibs/arm64-v8a/"
+          unzip -o winlator.apk -Z1 | head -50
+          unzip -o winlator.apk "lib/arm64-v8a/*.so" -d extracted || true
+          mkdir -p "$WORKSPACE/app/src/main/jniLibs/arm64-v8a"
+          if [ -d extracted/lib/arm64-v8a ]; then
+            cp extracted/lib/arm64-v8a/*.so "$WORKSPACE/app/src/main/jniLibs/arm64-v8a/" 2>/dev/null || true
+          fi
           # Remove libraries that the local CMake build will compile from source.
           # (CMake will produce its own versions of these; jniLibs copies would
           # cause mergeDebugNativeLibs to see them twice.)
@@ -156,7 +160,7 @@ jobs:
             "assets/graphics_driver/*.tzst" \
             "assets/dxwrapper/*.tzst" \
             "assets/box64/box64-0.4.0.tzst" \
-            -d "$WORKSPACE/app/src/main/" >/dev/null
+            -d "$WORKSPACE/app/src/main/" || true
           echo "  copied $(du -sh "$WORKSPACE/app/src/main/assets" | cut -f1) of assets"
           echo "Final asset tree:"
           find "$WORKSPACE/app/src/main/assets" -maxdepth 2 -type f | sort
