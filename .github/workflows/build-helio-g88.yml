@@ -128,6 +128,8 @@ jobs:
           rm -rf extracted
           mkdir -p extracted
           unzip -o winlator.apk "lib/arm64-v8a/*" -d extracted || true
+          echo "Extracted .so files in APK:"
+          find extracted -name "*.so"
           mkdir -p "$WORKSPACE/app/src/main/jniLibs/arm64-v8a"
           find extracted -name "*.so" -exec cp {} "$WORKSPACE/app/src/main/jniLibs/arm64-v8a/" \;
           # Remove libraries that the local CMake build will compile from source.
