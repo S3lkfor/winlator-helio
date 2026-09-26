@@ -120,7 +120,7 @@ jobs:
           set -e
           WORKSPACE="$GITHUB_WORKSPACE"
           echo "Fetching upstream Winlator APK…"
-          curl -sL -o /tmp/winlator.apk "https://github.com/brunodev85/winlator/releases/latest/download/Winlator_11.1.apk"
+          curl -sL -o /tmp/winlator.apk "https://github.com/brunodev85/winlator/releases/latest/download/Winlator_11.2.apk"
           echo "Extracting native libraries…"
           rm -rf "$WORKSPACE/app/src/main/jniLibs"
           mkdir -p "$WORKSPACE/app/src/main/jniLibs/arm64-v8a"
